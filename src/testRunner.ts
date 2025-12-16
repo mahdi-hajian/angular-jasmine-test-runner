@@ -26,39 +26,46 @@ export class TestRunner {
             }
 
             const config = vscode.workspace.getConfiguration('runSingleTest');
-            const karmaConfigPath = config.get<string>('karmaConfigPath', 'karma.conf.js');
-            const karmaCommand = config.get<string>('karmaCommand', 'npm test');
+            const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
+            let libraryName = config.get<string>('libraryName', '');
+            const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
 
-            const fullKarmaConfigPath = path.join(workspaceFolder.uri.fsPath, karmaConfigPath);
-            
-            // Check if karma config exists
-            if (!fs.existsSync(fullKarmaConfigPath)) {
-                vscode.window.showWarningMessage(
-                    `Karma config not found at ${karmaConfigPath}. Using default configuration.`
-                );
+            // If library name is not set, ask user for it
+            if (!libraryName || libraryName.trim() === '') {
+                const input = await vscode.window.showInputBox({
+                    prompt: 'نام کتابخانه را وارد کنید (Library Name)',
+                    placeHolder: 'مثال: bdmp',
+                    ignoreFocusOut: true
+                });
+
+                if (!input || input.trim() === '') {
+                    vscode.window.showWarningMessage('اجرای تست لغو شد. نام کتابخانه الزامی است.');
+                    return;
+                }
+
+                libraryName = input.trim();
+                
+                // Save to settings for future use
+                await config.update('libraryName', libraryName, vscode.ConfigurationTarget.Workspace);
+                vscode.window.showInformationMessage(`نام کتابخانه "${libraryName}" ذخیره شد.`);
             }
 
             // Escape test name for grep pattern
             const escapedTestName = this.escapeTestName(testName);
             
-            // Build karma command with grep filter
-            // Karma supports --grep option to filter tests
-            const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
+            // Build ng test command with grep filter
+            const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, escapedTestName);
             
-            // Try different approaches to run the specific test
-            // Method 1: Use karma --grep option
-            const karmaArgs = this.buildKarmaArgs(karmaCommand, escapedTestName, relativeFilePath);
-            
-            this.outputChannel.appendLine(`Command: ${karmaArgs.command} ${karmaArgs.args.join(' ')}`);
+            this.outputChannel.appendLine(`Command: ${commandArgs.command} ${commandArgs.args.join(' ')}`);
             this.outputChannel.appendLine('');
 
             // Show progress
             vscode.window.showInformationMessage(`Running test: ${testName}...`);
 
-            // Execute karma
+            // Execute ng test
             await this.executeCommand(
-                karmaArgs.command,
-                karmaArgs.args,
+                commandArgs.command,
+                commandArgs.args,
                 workspaceFolder.uri.fsPath
             );
 
@@ -74,42 +81,47 @@ export class TestRunner {
         return testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    private buildKarmaArgs(karmaCommand: string, testName: string, filePath: string): { command: string; args: string[] } {
-        // Parse the karma command (could be "npm test", "npx karma", "ng test", etc.)
-        const parts = karmaCommand.split(/\s+/);
-        const command = parts[0];
-        const existingArgs = parts.slice(1);
+    private buildNgTestArgs(ngTestCommand: string, libraryName: string, ngTestArgs: string, testName: string): { command: string; args: string[] } {
+        // Parse the ng test command
+        // Example: "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test"
+        const parts = ngTestCommand.trim().split(/\s+/);
+        const command = parts[0]; // "node"
+        const commandParts = parts.slice(1); // ["--max_old_space_size=15360", "node_modules/@angular/cli/bin/ng", "test"]
 
-        // Build arguments
-        const args = [...existingArgs];
+        // Find the index of "test" in the command parts
+        const testIndex = commandParts.indexOf('test');
+        
+        // Build arguments array
+        const args: string[] = [];
 
-        // Handle different command types
-        if (command === 'ng') {
-            // Angular CLI: ng test --include='**/file.spec.ts' --grep='test name'
-            // Note: Angular CLI might need different approach
-            // For now, we'll use --grep which should work with karma-jasmine
-            if (!args.includes('--grep')) {
-                args.push('--grep', testName);
+        if (testIndex >= 0) {
+            // Add everything before "test" (node args + ng path)
+            args.push(...commandParts.slice(0, testIndex + 1)); // includes "test"
+            
+            // Add library name right after "test" if specified
+            if (libraryName) {
+                args.push(libraryName);
             }
-        } else if (command === 'npm' || command === 'yarn') {
-            // npm/yarn: need to pass -- to forward arguments
-            if (!args.includes('--')) {
-                args.push('--');
-            }
-            // Add karma-specific arguments after --
-            args.push('--grep', testName);
-        } else if (command === 'npx') {
-            // npx karma --grep='test name'
-            if (existingArgs.length === 0 || !existingArgs[0].includes('karma')) {
-                // If karma is not in args, assume it's 'npx karma'
-                args.push('karma');
-            }
-            args.push('--grep', testName);
         } else {
-            // Direct karma command or custom script
-            // Try to add --grep
-            args.push('--grep', testName);
+            // "test" not found, add all parts and append "test"
+            args.push(...commandParts);
+            args.push('test');
+            
+            // Add library name if specified
+            if (libraryName) {
+                args.push(libraryName);
+            }
         }
+
+        // Parse and add additional ng test arguments
+        if (ngTestArgs && ngTestArgs.trim()) {
+            const additionalArgs = ngTestArgs.trim().split(/\s+/).filter(arg => arg.length > 0);
+            args.push(...additionalArgs);
+        }
+
+        // Add --grep to filter the specific test
+        // This tells karma-jasmine to only run tests matching this pattern
+        args.push('--grep', testName);
 
         return { command, args };
     }

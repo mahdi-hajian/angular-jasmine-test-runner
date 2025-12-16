@@ -30,24 +30,42 @@
 
 در تنظیمات VS Code می‌توانید موارد زیر را تغییر دهید:
 
-- `runSingleTest.karmaConfigPath`: مسیر فایل کانفیگ karma (پیش‌فرض: `karma.conf.js`)
-- `runSingleTest.karmaCommand`: دستور اجرای karma (پیش‌فرض: `npm test`)
+- `runSingleTest.ngTestCommand`: دستور کامل برای اجرای ng test (پیش‌فرض: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
+- `runSingleTest.libraryName`: نام کتابخانه/پروژه برای ng test (مثال: `bdmp`)
+- `runSingleTest.ngTestArgs`: آرگومان‌های اضافی برای ng test (پیش‌فرض: `--configuration=withConfig --browsers=ChromeDebug`)
 
 مثال:
 ```json
 {
-  "runSingleTest.karmaConfigPath": "karma.conf.js",
-  "runSingleTest.karmaCommand": "npm test"
+  "runSingleTest.ngTestCommand": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
+  "runSingleTest.libraryName": "bdmp",
+  "runSingleTest.ngTestArgs": "--configuration=withConfig --browsers=ChromeDebug"
 }
 ```
+
+### نحوه تنظیم:
+
+1. در VS Code، `Ctrl+,` (یا `Cmd+,` در Mac) را بزنید
+2. در جستجو بنویسید: `runSingleTest`
+3. مقادیر را تنظیم کنید:
+   - **ngTestCommand**: دستور کامل ng test شما
+   - **libraryName**: نام کتابخانه (مثل `bdmp`)
+   - **ngTestArgs**: آرگومان‌های اضافی (مثل `--configuration=withConfig --browsers=ChromeDebug`)
 
 ## نحوه کار
 
 اکستنشن از CodeLens استفاده می‌کند تا لینک‌های اجرای تست را کنار بلوک‌های تست نمایش دهد. هنگام کلیک روی لینک، اکستنشن:
 
 1. نام کامل تست (شامل describe های والد) را استخراج می‌کند
-2. دستور karma را با فیلتر `--grep` اجرا می‌کند
-3. خروجی را در پنل Output نمایش می‌دهد
+2. دستور `ng test` را با فیلتر `--grep` برای اجرای فقط همان تست می‌سازد
+3. دستور را اجرا می‌کند و خروجی را در پنل Output نمایش می‌دهد
+
+### مثال دستور تولید شده:
+
+اگر تست `should create` در `MyComponent` باشد، دستور زیر اجرا می‌شود:
+```bash
+node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test bdmp --configuration=withConfig --browsers=ChromeDebug --grep "MyComponent > should create"
+```
 
 ## مثال
 

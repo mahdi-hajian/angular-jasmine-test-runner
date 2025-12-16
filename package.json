@@ -3,6 +3,7 @@
   "displayName": "Run Single Test",
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
   "version": "0.1.0",
+  "publisher": "mahdihajian",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -24,15 +25,20 @@
     "configuration": {
       "title": "Run Single Test",
       "properties": {
-        "runSingleTest.karmaConfigPath": {
+        "runSingleTest.ngTestCommand": {
           "type": "string",
-          "default": "karma.conf.js",
-          "description": "Path to karma configuration file relative to workspace root"
+          "default": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
+          "description": "Full command to run ng test (e.g., 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test')"
         },
-        "runSingleTest.karmaCommand": {
+        "runSingleTest.libraryName": {
           "type": "string",
-          "default": "npm test",
-          "description": "Command to run karma (e.g., 'npm test', 'npx karma', './node_modules/.bin/karma')"
+          "default": "",
+          "description": "Library/project name for ng test (e.g., 'bdmp')"
+        },
+        "runSingleTest.ngTestArgs": {
+          "type": "string",
+          "default": "--configuration=withConfig --browsers=ChromeDebug",
+          "description": "Additional arguments for ng test (e.g., '--configuration=withConfig --browsers=ChromeDebug')"
         }
       }
     }
