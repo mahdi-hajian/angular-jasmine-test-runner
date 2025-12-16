@@ -44,6 +44,11 @@
         "command": "runSingleTest.runTestFromExplorer",
         "title": "Run Tests",
         "icon": "$(play)"
+      },
+      {
+        "command": "runSingleTest.runTestFromEditor",
+        "title": "Run Tests",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -52,6 +57,13 @@
           "command": "runSingleTest.runTestFromExplorer",
           "when": "explorerResourceIsFolder || resourceFilename =~ /.*\\.(spec|test)\\.(ts|js)$/",
           "group": "runSingleTest"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "runSingleTest.runTestFromEditor",
+          "when": "resourceFilename =~ /.*\\.(spec|test)\\.(ts|js)$/",
+          "group": "navigation@2"
         }
       ]
     },
