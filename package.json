@@ -35,14 +35,14 @@
     "Testing"
   ],
   "activationEvents": [
-    "onCommand:runSingleTest.runTestFromExplorer"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "runSingleTest.runTestFromExplorer",
-        "title": "Run Test",
+        "title": "Run Tests",
         "icon": "$(play)"
       }
     ],
@@ -50,7 +50,7 @@
       "explorer/context": [
         {
           "command": "runSingleTest.runTestFromExplorer",
-          "when": "resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
+          "when": "explorerResourceIsFolder || resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
           "group": "runSingleTest"
         }
       ]
