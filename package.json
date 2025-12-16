@@ -50,7 +50,7 @@
       "explorer/context": [
         {
           "command": "runSingleTest.runTestFromExplorer",
-          "when": "explorerResourceIsFolder || resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
+          "when": "explorerResourceIsFolder || resourceFilename =~ /.*\\.(spec|test)\\.(ts|js)$/",
           "group": "runSingleTest"
         }
       ]
