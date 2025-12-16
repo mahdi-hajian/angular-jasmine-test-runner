@@ -31,12 +31,21 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
                 const lineNumber = i;
                 const range = new vscode.Range(lineNumber, 0, lineNumber, line.length);
                 
-                const codeLens = new vscode.CodeLens(range, {
+                // Add Run Test File code lens
+                const runCodeLens = new vscode.CodeLens(range, {
                     title: `▶ Run Test File`,
                     command: 'runSingleTest.runTest',
                     arguments: [testName, document.fileName, lineNumber]
                 });
-                codeLenses.push(codeLens);
+                codeLenses.push(runCodeLens);
+                
+                // Add Stop Test code lens
+                const stopCodeLens = new vscode.CodeLens(range, {
+                    title: `⏹ Stop this test`,
+                    command: 'runSingleTest.stopTest',
+                    arguments: []
+                });
+                codeLenses.push(stopCodeLens);
                 
                 // Only show code lens for the first describe, so break after finding it
                 break;

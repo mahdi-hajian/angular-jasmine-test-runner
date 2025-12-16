@@ -5,9 +5,20 @@ import { spawn } from 'child_process';
 
 export class TestRunner {
     private outputChannel: vscode.OutputChannel;
+    private currentProcess: any = null;
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Run Single Test');
+    }
+
+    stopTest(): void {
+        if (this.currentProcess) {
+            this.outputChannel.appendLine('');
+            this.outputChannel.appendLine('Stopping test execution...');
+            this.currentProcess.kill();
+            this.currentProcess = null;
+            vscode.window.showInformationMessage('Test execution stopped.');
+        }
     }
 
     async runTest(testName: string, filePath: string, lineNumber: number): Promise<void> {
@@ -26,28 +37,8 @@ export class TestRunner {
 
             const config = vscode.workspace.getConfiguration('runSingleTest');
             const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
-            let libraryName = config.get<string>('libraryName', '');
+            const libraryName = config.get<string>('libraryName', ''); // Use empty string if not set, don't ask user
             const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
-
-            // If library name is not set, ask user for it
-            if (!libraryName || libraryName.trim() === '') {
-                const input = await vscode.window.showInputBox({
-                    prompt: 'Enter library name (Library Name)',
-                    placeHolder: 'Example: bdmp',
-                    ignoreFocusOut: true
-                });
-
-                if (!input || input.trim() === '') {
-                    vscode.window.showWarningMessage('Test execution cancelled. Library name is required.');
-                    return;
-                }
-
-                libraryName = input.trim();
-                
-                // Save to settings for future use
-                await config.update('libraryName', libraryName, vscode.ConfigurationTarget.Workspace);
-                vscode.window.showInformationMessage(`Library name "${libraryName}" saved.`);
-            }
 
             // Get relative file path for --include
             const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
@@ -122,6 +113,11 @@ export class TestRunner {
 
     private executeCommand(command: string, args: string[], cwd: string): Promise<void> {
         return new Promise((resolve, reject) => {
+            // Stop any existing process
+            if (this.currentProcess) {
+                this.currentProcess.kill();
+            }
+
             this.outputChannel.appendLine(`Executing in: ${cwd}`);
             this.outputChannel.appendLine('');
 
@@ -131,7 +127,10 @@ export class TestRunner {
                 stdio: 'pipe'
             });
 
+            this.currentProcess = process;
+
             let hasError = false;
+            let wasStopped = false;
 
             process.stdout?.on('data', (data) => {
                 const output = data.toString();
@@ -146,11 +145,23 @@ export class TestRunner {
             process.on('error', (error) => {
                 hasError = true;
                 this.outputChannel.appendLine(`Process error: ${error.message}`);
+                this.currentProcess = null;
                 reject(error);
             });
 
-            process.on('close', (code) => {
+            process.on('close', (code, signal) => {
+                this.currentProcess = null;
+
                 if (hasError) {
+                    return;
+                }
+
+                // Check if process was killed
+                if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+                    wasStopped = true;
+                    this.outputChannel.appendLine('');
+                    this.outputChannel.appendLine('Test execution stopped by user.');
+                    resolve();
                     return;
                 }
 
