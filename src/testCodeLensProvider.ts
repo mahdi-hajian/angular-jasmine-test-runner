@@ -39,14 +39,6 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
                 });
                 codeLenses.push(runCodeLens);
                 
-                // Add Stop Test code lens
-                const stopCodeLens = new vscode.CodeLens(range, {
-                    title: `⏹ Stop this test`,
-                    command: 'runSingleTest.stopTest',
-                    arguments: []
-                });
-                codeLenses.push(stopCodeLens);
-                
                 // Only show code lens for the first describe, so break after finding it
                 break;
             }

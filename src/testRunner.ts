@@ -11,15 +11,6 @@ export class TestRunner {
         this.outputChannel = vscode.window.createOutputChannel('Run Single Test');
     }
 
-    stopTest(): void {
-        if (this.currentTerminal) {
-            // Send Ctrl+C to terminal
-            this.currentTerminal.sendText('\x03', false);
-            this.currentTerminal = null;
-            vscode.window.showInformationMessage('Test execution stopped.');
-        }
-    }
-
     async runTest(testName: string, filePath: string, lineNumber: number): Promise<void> {
         try {
             this.outputChannel.clear();
@@ -127,7 +118,7 @@ export class TestRunner {
         // Execute command in terminal
         this.currentTerminal.sendText(command, true);
 
-        this.outputChannel.appendLine(`Command executed in terminal. You can stop it with Ctrl+C or the Stop button.`);
+        this.outputChannel.appendLine(`Command executed in terminal. You can stop it with Ctrl+C in the terminal.`);
     }
 }
 

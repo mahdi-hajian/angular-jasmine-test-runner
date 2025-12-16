@@ -20,11 +20,6 @@
       {
         "command": "runSingleTest.runTest",
         "title": "Run Test"
-      },
-      {
-        "command": "runSingleTest.stopTest",
-        "title": "Stop Test",
-        "icon": "$(debug-stop)"
       }
     ],
     "configuration": {

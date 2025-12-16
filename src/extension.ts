@@ -23,15 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    // Register command to stop test
-    const stopTestCommand = vscode.commands.registerCommand(
-        'runSingleTest.stopTest',
-        () => {
-            testRunner.stopTest();
-        }
-    );
-
-    context.subscriptions.push(codeLensProviderDisposable, runTestCommand, stopTestCommand);
+    context.subscriptions.push(codeLensProviderDisposable, runTestCommand);
 }
 
 export function deactivate() {}
