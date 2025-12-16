@@ -5,18 +5,17 @@ import { spawn } from 'child_process';
 
 export class TestRunner {
     private outputChannel: vscode.OutputChannel;
-    private currentProcess: any = null;
+    private currentTerminal: vscode.Terminal | null = null;
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Run Single Test');
     }
 
     stopTest(): void {
-        if (this.currentProcess) {
-            this.outputChannel.appendLine('');
-            this.outputChannel.appendLine('Stopping test execution...');
-            this.currentProcess.kill();
-            this.currentProcess = null;
+        if (this.currentTerminal) {
+            // Send Ctrl+C to terminal
+            this.currentTerminal.sendText('\x03', false);
+            this.currentTerminal = null;
             vscode.window.showInformationMessage('Test execution stopped.');
         }
     }
@@ -46,18 +45,17 @@ export class TestRunner {
             // Build ng test command with --include filter
             const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
             
-            this.outputChannel.appendLine(`Command: ${commandArgs.command} ${commandArgs.args.join(' ')}`);
+            // Build full command string
+            const fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
+            
+            this.outputChannel.appendLine(`Command: ${fullCommand}`);
             this.outputChannel.appendLine('');
 
             // Show progress
             vscode.window.showInformationMessage(`Running test file: ${relativeFilePath}...`);
 
-            // Execute ng test
-            await this.executeCommand(
-                commandArgs.command,
-                commandArgs.args,
-                workspaceFolder.uri.fsPath
-            );
+            // Execute ng test in terminal
+            await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -111,72 +109,25 @@ export class TestRunner {
         return { command, args };
     }
 
-    private executeCommand(command: string, args: string[], cwd: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // Stop any existing process
-            if (this.currentProcess) {
-                this.currentProcess.kill();
-            }
+    private async executeInTerminal(command: string, cwd: string): Promise<void> {
+        // Close existing terminal if any
+        if (this.currentTerminal) {
+            this.currentTerminal.dispose();
+        }
 
-            this.outputChannel.appendLine(`Executing in: ${cwd}`);
-            this.outputChannel.appendLine('');
-
-            const process = spawn(command, args, {
-                cwd,
-                shell: true,
-                stdio: 'pipe'
-            });
-
-            this.currentProcess = process;
-
-            let hasError = false;
-            let wasStopped = false;
-
-            process.stdout?.on('data', (data) => {
-                const output = data.toString();
-                this.outputChannel.append(output);
-            });
-
-            process.stderr?.on('data', (data) => {
-                const output = data.toString();
-                this.outputChannel.append(output);
-            });
-
-            process.on('error', (error) => {
-                hasError = true;
-                this.outputChannel.appendLine(`Process error: ${error.message}`);
-                this.currentProcess = null;
-                reject(error);
-            });
-
-            process.on('close', (code, signal) => {
-                this.currentProcess = null;
-
-                if (hasError) {
-                    return;
-                }
-
-                // Check if process was killed
-                if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-                    wasStopped = true;
-                    this.outputChannel.appendLine('');
-                    this.outputChannel.appendLine('Test execution stopped by user.');
-                    resolve();
-                    return;
-                }
-
-                this.outputChannel.appendLine('');
-                this.outputChannel.appendLine(`Process exited with code ${code}`);
-
-                if (code === 0) {
-                    vscode.window.showInformationMessage('Test completed successfully!');
-                } else {
-                    vscode.window.showWarningMessage(`Test exited with code ${code}`);
-                }
-
-                resolve();
-            });
+        // Create a new terminal
+        this.currentTerminal = vscode.window.createTerminal({
+            name: 'Run Single Test',
+            cwd: cwd
         });
+
+        // Show terminal
+        this.currentTerminal.show();
+
+        // Execute command in terminal
+        this.currentTerminal.sendText(command, true);
+
+        this.outputChannel.appendLine(`Command executed in terminal. You can stop it with Ctrl+C or the Stop button.`);
     }
 }
 
