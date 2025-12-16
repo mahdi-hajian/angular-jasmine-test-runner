@@ -12,6 +12,7 @@
     "url": "https://github.com/mahdi-hajian/vscode-run-single-test/issues"
   },
   "homepage": "https://github.com/mahdi-hajian/vscode-run-single-test#readme",
+  "license": "MIT",
   "keywords": [
     "angular",
     "jasmine",

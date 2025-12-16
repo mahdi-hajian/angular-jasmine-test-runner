@@ -20,7 +20,7 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
         const lineCount = Math.min(document.lineCount, maxLinesToCheck);
         
         // Pre-compiled regex for better performance
-        const describeRegex = /^\s*(?:fdescribe|describe|ddescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
+        const describeRegex = /^\s*(?:fdescribe|describe|xdescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
 
         // Find only the first (main) describe block in the file
         for (let i = 0; i < lineCount; i++) {
