@@ -11,6 +11,72 @@ export class TestRunner {
         this.outputChannel = vscode.window.createOutputChannel('Run Single Test');
     }
 
+    async runTestFromExplorer(resourceUri: vscode.Uri): Promise<void> {
+        try {
+            const stat = fs.statSync(resourceUri.fsPath);
+            const isDirectory = stat.isDirectory();
+            
+            const workspaceFolder = vscode.workspace.getWorkspaceFolder(resourceUri);
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder found');
+                return;
+            }
+
+            const config = vscode.workspace.getConfiguration('runSingleTest');
+            const usePackageJsonScript = config.get<boolean>('usePackageJsonScript', false);
+            const packageJsonScript = config.get<string>('packageJsonScript', 'test');
+            const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
+            const autoDetectLibraryName = config.get<boolean>('autoDetectLibraryName', false);
+            let libraryName = config.get<string>('libraryName', '');
+            const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
+
+            // Get relative path
+            const relativePath = path.relative(workspaceFolder.uri.fsPath, resourceUri.fsPath);
+            
+            // Auto-detect library name from path if enabled
+            if (autoDetectLibraryName && !libraryName) {
+                libraryName = this.extractLibraryNameFromPath(relativePath);
+            }
+
+            // Build include pattern - if directory, add **/*.spec.ts pattern
+            let includePattern: string;
+            if (isDirectory) {
+                includePattern = `${relativePath}/**/*.spec.ts`;
+            } else {
+                includePattern = relativePath;
+            }
+            
+            let fullCommand: string;
+
+            if (usePackageJsonScript) {
+                // Use npm script from package.json
+                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, includePattern);
+            } else {
+                // Use direct ng test command
+                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, includePattern);
+                fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
+            }
+
+            this.outputChannel.clear();
+            this.outputChannel.show(true);
+            this.outputChannel.appendLine(`Running tests from: ${isDirectory ? 'folder' : 'file'}`);
+            this.outputChannel.appendLine(`Path: ${relativePath}`);
+            this.outputChannel.appendLine(`Command: ${fullCommand}`);
+            this.outputChannel.appendLine('');
+
+            // Show progress
+            vscode.window.showInformationMessage(`Running tests from ${relativePath}...`);
+
+            // Execute command in terminal
+            await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
+            this.outputChannel.appendLine(`ERROR: ${errorMessage}`);
+        }
+    }
+
     async runTest(testName: string, filePath: string, lineNumber: number): Promise<void> {
         try {
             this.outputChannel.clear();

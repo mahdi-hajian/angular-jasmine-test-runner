@@ -23,7 +23,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(codeLensProviderDisposable, runTestCommand);
+    // Register command to run test from explorer (right-click)
+    const runTestFromExplorerCommand = vscode.commands.registerCommand(
+        'runSingleTest.runTestFromExplorer',
+        async (resourceUri: vscode.Uri) => {
+            await testRunner.runTestFromExplorer(resourceUri);
+        }
+    );
+
+    context.subscriptions.push(codeLensProviderDisposable, runTestCommand, runTestFromExplorerCommand);
 }
 
 export function deactivate() {}

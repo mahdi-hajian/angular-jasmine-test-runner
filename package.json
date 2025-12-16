@@ -2,7 +2,7 @@
   "name": "vscode-run-single-test",
   "displayName": "Run Single Test",
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "mahdihajian",
   "repository": {
     "type": "git",
@@ -44,8 +44,22 @@
       {
         "command": "runSingleTest.runTest",
         "title": "Run Test"
+      },
+      {
+        "command": "runSingleTest.runTestFromExplorer",
+        "title": "Run Tests",
+        "icon": "$(play)"
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "runSingleTest.runTestFromExplorer",
+          "when": "explorerResourceIsFolder || resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
+          "group": "runSingleTest"
+        }
+      ]
+    },
     "configuration": {
       "title": "Run Single Test",
       "properties": {
