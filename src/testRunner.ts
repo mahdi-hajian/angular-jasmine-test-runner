@@ -16,6 +16,12 @@ export class TestRunner {
             const stat = fs.statSync(resourceUri.fsPath);
             const isDirectory = stat.isDirectory();
             
+            // Only allow files, not directories
+            if (isDirectory) {
+                vscode.window.showWarningMessage('Please select a test file, not a folder.');
+                return;
+            }
+            
             const workspaceFolder = vscode.workspace.getWorkspaceFolder(resourceUri);
             if (!workspaceFolder) {
                 vscode.window.showErrorMessage('No workspace folder found');
@@ -30,42 +36,34 @@ export class TestRunner {
             let libraryName = config.get<string>('libraryName', '');
             const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
 
-            // Get relative path
-            const relativePath = path.relative(workspaceFolder.uri.fsPath, resourceUri.fsPath);
+            // Get relative file path
+            const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, resourceUri.fsPath);
             
             // Auto-detect library name from path if enabled
             if (autoDetectLibraryName && !libraryName) {
-                libraryName = this.extractLibraryNameFromPath(relativePath);
-            }
-
-            // Build include pattern - if directory, add **/*.spec.ts pattern
-            let includePattern: string;
-            if (isDirectory) {
-                includePattern = `${relativePath}/**/*.spec.ts`;
-            } else {
-                includePattern = relativePath;
+                libraryName = this.extractLibraryNameFromPath(relativeFilePath);
             }
             
             let fullCommand: string;
 
             if (usePackageJsonScript) {
                 // Use npm script from package.json
-                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, includePattern);
+                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, relativeFilePath);
             } else {
                 // Use direct ng test command
-                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, includePattern);
+                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
                 fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
             }
 
             this.outputChannel.clear();
             this.outputChannel.show(true);
-            this.outputChannel.appendLine(`Running tests from: ${isDirectory ? 'folder' : 'file'}`);
-            this.outputChannel.appendLine(`Path: ${relativePath}`);
+            this.outputChannel.appendLine(`Running test file`);
+            this.outputChannel.appendLine(`File: ${relativeFilePath}`);
             this.outputChannel.appendLine(`Command: ${fullCommand}`);
             this.outputChannel.appendLine('');
 
             // Show progress
-            vscode.window.showInformationMessage(`Running tests from ${relativePath}...`);
+            vscode.window.showInformationMessage(`Running test file: ${relativeFilePath}...`);
 
             // Execute command in terminal
             await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);

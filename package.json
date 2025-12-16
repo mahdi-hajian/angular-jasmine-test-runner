@@ -2,7 +2,7 @@
   "name": "vscode-run-single-test",
   "displayName": "Run Single Test",
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "publisher": "mahdihajian",
   "repository": {
     "type": "git",
@@ -35,19 +35,14 @@
     "Testing"
   ],
   "activationEvents": [
-    "onLanguage:typescript",
-    "onLanguage:javascript"
+    "onCommand:runSingleTest.runTestFromExplorer"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "runSingleTest.runTest",
-        "title": "Run Test"
-      },
-      {
         "command": "runSingleTest.runTestFromExplorer",
-        "title": "Run Tests",
+        "title": "Run Test",
         "icon": "$(play)"
       }
     ],
@@ -55,7 +50,7 @@
       "explorer/context": [
         {
           "command": "runSingleTest.runTestFromExplorer",
-          "when": "explorerResourceIsFolder || resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
+          "when": "resourceExtname =~ /\\.(spec|test)\\.(ts|js)$/",
           "group": "runSingleTest"
         }
       ]
@@ -92,11 +87,6 @@
           "type": "string",
           "default": "--configuration=withConfig --browsers=ChromeDebug",
           "description": "Additional arguments for ng test (e.g., '--configuration=withConfig --browsers=ChromeDebug')"
-        },
-        "runSingleTest.maxLinesToCheck": {
-          "type": "number",
-          "default": 100,
-          "description": "Maximum number of lines to check for finding the first describe block (default: 100)"
         }
       }
     }
