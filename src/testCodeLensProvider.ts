@@ -14,28 +14,36 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 
     provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-        const text = document.getText();
-        const lines = text.split('\n');
-
-        // Regular expression to match describe blocks (only top-level/main describe)
-        const describeRegex = /^\s*(fdescribe|describe|ddescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
+        
+        // Optimized: Only check first 200 lines (describe is usually at the top)
+        const maxLinesToCheck = 50;
+        const lineCount = Math.min(document.lineCount, maxLinesToCheck);
+        
+        // Pre-compiled regex for better performance
+        const describeRegex = /^\s*(?:fdescribe|describe|ddescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
 
         // Find only the first (main) describe block in the file
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const describeMatch = line.match(describeRegex);
+        for (let i = 0; i < lineCount; i++) {
+            const line = document.lineAt(i);
+            const lineText = line.text;
+            
+            // Quick check: skip if line doesn't contain "describe"
+            if (!lineText.includes('describe')) {
+                continue;
+            }
+            
+            const describeMatch = lineText.match(describeRegex);
             
             if (describeMatch) {
                 // Found the first describe block - add code lens only for this one
-                const testName = describeMatch[2];
-                const lineNumber = i;
-                const range = new vscode.Range(lineNumber, 0, lineNumber, line.length);
+                const testName = describeMatch[1];
+                const range = new vscode.Range(i, 0, i, lineText.length);
                 
                 // Add Run Test File code lens
                 const runCodeLens = new vscode.CodeLens(range, {
                     title: `▶ Run Test File`,
                     command: 'runSingleTest.runTest',
-                    arguments: [testName, document.fileName, lineNumber]
+                    arguments: [testName, document.fileName, i]
                 });
                 codeLenses.push(runCodeLens);
                 
