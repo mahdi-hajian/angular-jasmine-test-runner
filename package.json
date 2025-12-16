@@ -48,7 +48,7 @@
       {
         "command": "runSingleTest.runTestFromEditor",
         "title": "Run Tests",
-        "icon": "$(play)"
+        "icon": "$(beaker)"
       }
     ],
     "menus": {
@@ -59,11 +59,11 @@
           "group": "runSingleTest"
         }
       ],
-      "editor/title": [
+      "editor/title/run": [
         {
           "command": "runSingleTest.runTestFromEditor",
           "when": "resourceFilename =~ /.*\\.(spec|test)\\.(ts|js)$/",
-          "group": "navigation@2"
+          "group": "navigation"
         }
       ]
     },
