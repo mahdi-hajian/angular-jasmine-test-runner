@@ -4,6 +4,29 @@
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
   "version": "0.1.0",
   "publisher": "mahdihajian",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mahdi-hajian/vscode-run-single-test.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mahdi-hajian/vscode-run-single-test/issues"
+  },
+  "homepage": "https://github.com/mahdi-hajian/vscode-run-single-test#readme",
+  "keywords": [
+    "angular",
+    "jasmine",
+    "karma",
+    "test",
+    "testing",
+    "unit-test",
+    "ng-test",
+    "angular-test",
+    "jasmine-test",
+    "karma-test",
+    "run-test",
+    "single-test",
+    "test-runner"
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
