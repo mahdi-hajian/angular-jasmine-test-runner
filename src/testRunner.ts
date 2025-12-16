@@ -26,18 +26,25 @@ export class TestRunner {
             }
 
             const config = vscode.workspace.getConfiguration('runSingleTest');
+            const usePackageJsonScript = config.get<boolean>('usePackageJsonScript', false);
+            const packageJsonScript = config.get<string>('packageJsonScript', 'test');
             const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
-            const libraryName = config.get<string>('libraryName', ''); // Use empty string if not set, don't ask user
+            const libraryName = config.get<string>('libraryName', '');
             const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
 
             // Get relative file path for --include
             const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
             
-            // Build ng test command with --include filter
-            const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
-            
-            // Build full command string
-            const fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
+            let fullCommand: string;
+
+            if (usePackageJsonScript) {
+                // Use npm script from package.json
+                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, relativeFilePath);
+            } else {
+                // Use direct ng test command
+                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
+                fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
+            }
             
             this.outputChannel.appendLine(`Command: ${fullCommand}`);
             this.outputChannel.appendLine('');
@@ -45,7 +52,7 @@ export class TestRunner {
             // Show progress
             vscode.window.showInformationMessage(`Running test file: ${relativeFilePath}...`);
 
-            // Execute ng test in terminal
+            // Execute command in terminal
             await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);
 
         } catch (error) {
@@ -53,6 +60,12 @@ export class TestRunner {
             vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
             this.outputChannel.appendLine(`ERROR: ${errorMessage}`);
         }
+    }
+
+    private buildPackageJsonScriptCommand(scriptName: string, filePath: string): string {
+        // Build command: npm run <script> -- --include <filePath>
+        // The -- is needed to pass arguments to the underlying script
+        return `npm run ${scriptName} -- --include ${filePath}`;
     }
 
     private buildNgTestArgs(ngTestCommand: string, libraryName: string, ngTestArgs: string, filePath: string): { command: string; args: string[] } {

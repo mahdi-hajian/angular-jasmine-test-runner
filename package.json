@@ -49,10 +49,20 @@
     "configuration": {
       "title": "Run Single Test",
       "properties": {
+        "runSingleTest.usePackageJsonScript": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use npm script from package.json instead of direct command"
+        },
+        "runSingleTest.packageJsonScript": {
+          "type": "string",
+          "default": "test",
+          "description": "Name of the script in package.json to run (e.g., 'test', 'test:single')"
+        },
         "runSingleTest.ngTestCommand": {
           "type": "string",
           "default": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
-          "description": "Full command to run ng test (e.g., 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test')"
+          "description": "Full command to run ng test (used when usePackageJsonScript is false)"
         },
         "runSingleTest.libraryName": {
           "type": "string",

@@ -30,6 +30,24 @@ A VS Code extension for running individual Angular/Jasmine/Karma tests.
 
 In VS Code settings you can change the following:
 
+### Option 1: Use npm script from package.json
+
+- `runSingleTest.usePackageJsonScript`: Set to `true` to use npm script (default: `false`)
+- `runSingleTest.packageJsonScript`: Name of the script in package.json (default: `test`)
+
+Example:
+```json
+{
+  "runSingleTest.usePackageJsonScript": true,
+  "runSingleTest.packageJsonScript": "test"
+}
+```
+
+This will execute: `npm run test -- --include <filePath>`
+
+### Option 2: Use direct ng test command (default)
+
+- `runSingleTest.usePackageJsonScript`: Set to `false` (default)
 - `runSingleTest.ngTestCommand`: Full command to run ng test (default: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
 - `runSingleTest.libraryName`: Library/project name for ng test (example: `bdmp`)
 - `runSingleTest.ngTestArgs`: Additional arguments for ng test (default: `--configuration=withConfig --browsers=ChromeDebug`)
@@ -37,6 +55,7 @@ In VS Code settings you can change the following:
 Example:
 ```json
 {
+  "runSingleTest.usePackageJsonScript": false,
   "runSingleTest.ngTestCommand": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
   "runSingleTest.libraryName": "bdmp",
   "runSingleTest.ngTestArgs": "--configuration=withConfig --browsers=ChromeDebug"
@@ -47,10 +66,7 @@ Example:
 
 1. In VS Code, press `Ctrl+,` (or `Cmd+,` on Mac)
 2. Search for: `runSingleTest`
-3. Set the values:
-   - **ngTestCommand**: Your full ng test command
-   - **libraryName**: Library name (e.g., `bdmp`)
-   - **ngTestArgs**: Additional arguments (e.g., `--configuration=withConfig --browsers=ChromeDebug`)
+3. Choose one of the options above and set the values accordingly
 
 ## How It Works
 
