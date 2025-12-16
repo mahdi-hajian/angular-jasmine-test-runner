@@ -17,67 +17,34 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
         const text = document.getText();
         const lines = text.split('\n');
 
-        // Regular expressions to match describe and it blocks
+        // Regular expression to match describe blocks (only top-level/main describe)
         const describeRegex = /^\s*(fdescribe|describe|ddescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
-        const itRegex = /^\s*(fit|it|xit)\s*\(['"`]([^'"`]+)['"`]\s*,/;
 
+        // Find only the first (main) describe block in the file
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            const lineNumber = i;
-            const range = new vscode.Range(lineNumber, 0, lineNumber, line.length);
-
-            // Check for describe blocks
             const describeMatch = line.match(describeRegex);
+            
             if (describeMatch) {
+                // Found the first describe block - add code lens only for this one
                 const testName = describeMatch[2];
-                const fullTestName = this.getFullTestName(lines, lineNumber, testName);
+                const lineNumber = i;
+                const range = new vscode.Range(lineNumber, 0, lineNumber, line.length);
                 
                 const codeLens = new vscode.CodeLens(range, {
-                    title: `▶ Run: ${testName}`,
+                    title: `▶ Run Test File`,
                     command: 'runSingleTest.runTest',
-                    arguments: [fullTestName, document.fileName, lineNumber]
+                    arguments: [testName, document.fileName, lineNumber]
                 });
                 codeLenses.push(codeLens);
-            }
-
-            // Check for it blocks
-            const itMatch = line.match(itRegex);
-            if (itMatch) {
-                const testName = itMatch[2];
-                const fullTestName = this.getFullTestName(lines, lineNumber, testName);
                 
-                const codeLens = new vscode.CodeLens(range, {
-                    title: `▶ Run: ${testName}`,
-                    command: 'runSingleTest.runTest',
-                    arguments: [fullTestName, document.fileName, lineNumber]
-                });
-                codeLenses.push(codeLens);
+                // Only show code lens for the first describe, so break after finding it
+                break;
             }
         }
 
         return codeLenses;
     }
 
-    /**
-     * Builds the full test name including parent describe blocks
-     */
-    private getFullTestName(lines: string[], currentLine: number, testName: string): string {
-        const describeStack: string[] = [];
-        const describeRegex = /^\s*(?:fdescribe|describe|ddescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
-        
-        // Find all parent describe blocks
-        for (let i = 0; i < currentLine; i++) {
-            const match = lines[i].match(describeRegex);
-            if (match) {
-                describeStack.push(match[1]);
-            }
-        }
-
-        // Build full test name: "Parent Describe > Child Describe > Test Name"
-        if (describeStack.length > 0) {
-            return `${describeStack.join(' > ')} > ${testName}`;
-        }
-        return testName;
-    }
 }
 

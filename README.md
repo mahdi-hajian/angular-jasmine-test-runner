@@ -1,40 +1,40 @@
 # Run Single Test - VS Code Extension
 
-یک اکستنشن VS Code برای اجرای تست‌های Angular/Jasmine/Karma به صورت جداگانه.
+A VS Code extension for running individual Angular/Jasmine/Karma tests.
 
-## ویژگی‌ها
+## Features
 
-- نمایش آیکون "▶ Run" کنار هر بلوک `describe` و `it`
-- اجرای تست‌های خاص با یک کلیک
-- پشتیبانی از `describe`، `fdescribe`، `it`، `fit`
-- نمایش خروجی تست‌ها در پنل Output
+- Display "▶ Run Test File" icon above the main `describe` block
+- Run specific test files with a single click
+- Support for `describe`, `fdescribe`
+- Display test output in the Output panel
 
-## نصب
+## Installation
 
-1. کلون یا دانلود این ریپازیتوری
-2. در ترمینال اجرا کنید:
+1. Clone or download this repository
+2. Run in terminal:
    ```bash
    npm install
    npm run compile
    ```
-3. در VS Code، کلید `F5` را بزنید تا اکستنشن در پنجره Extension Development Host باز شود
+3. In VS Code, press `F5` to open the extension in Extension Development Host window
 
-## استفاده
+## Usage
 
-1. یک فایل تست Angular/Jasmine را باز کنید
-2. کنار هر بلوک `describe` یا `it` یک لینک "▶ Run: [نام تست]" نمایش داده می‌شود
-3. روی لینک کلیک کنید تا تست اجرا شود
-4. خروجی در پنل Output با نام "Run Single Test" نمایش داده می‌شود
+1. Open an Angular/Jasmine test file
+2. A "▶ Run Test File" link will appear above the first `describe` block
+3. Click the link to run the test file
+4. Output will be displayed in the Output panel named "Run Single Test"
 
-## تنظیمات
+## Configuration
 
-در تنظیمات VS Code می‌توانید موارد زیر را تغییر دهید:
+In VS Code settings you can change the following:
 
-- `runSingleTest.ngTestCommand`: دستور کامل برای اجرای ng test (پیش‌فرض: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
-- `runSingleTest.libraryName`: نام کتابخانه/پروژه برای ng test (مثال: `bdmp`)
-- `runSingleTest.ngTestArgs`: آرگومان‌های اضافی برای ng test (پیش‌فرض: `--configuration=withConfig --browsers=ChromeDebug`)
+- `runSingleTest.ngTestCommand`: Full command to run ng test (default: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
+- `runSingleTest.libraryName`: Library/project name for ng test (example: `bdmp`)
+- `runSingleTest.ngTestArgs`: Additional arguments for ng test (default: `--configuration=withConfig --browsers=ChromeDebug`)
 
-مثال:
+Example:
 ```json
 {
   "runSingleTest.ngTestCommand": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
@@ -43,64 +43,61 @@
 }
 ```
 
-### نحوه تنظیم:
+### How to Configure:
 
-1. در VS Code، `Ctrl+,` (یا `Cmd+,` در Mac) را بزنید
-2. در جستجو بنویسید: `runSingleTest`
-3. مقادیر را تنظیم کنید:
-   - **ngTestCommand**: دستور کامل ng test شما
-   - **libraryName**: نام کتابخانه (مثل `bdmp`)
-   - **ngTestArgs**: آرگومان‌های اضافی (مثل `--configuration=withConfig --browsers=ChromeDebug`)
+1. In VS Code, press `Ctrl+,` (or `Cmd+,` on Mac)
+2. Search for: `runSingleTest`
+3. Set the values:
+   - **ngTestCommand**: Your full ng test command
+   - **libraryName**: Library name (e.g., `bdmp`)
+   - **ngTestArgs**: Additional arguments (e.g., `--configuration=withConfig --browsers=ChromeDebug`)
 
-## نحوه کار
+## How It Works
 
-اکستنشن از CodeLens استفاده می‌کند تا لینک‌های اجرای تست را کنار بلوک‌های تست نمایش دهد. هنگام کلیک روی لینک، اکستنشن:
+The extension uses CodeLens to display test run links above test blocks. When you click the link, the extension:
 
-1. نام کامل تست (شامل describe های والد) را استخراج می‌کند
-2. دستور `ng test` را با فیلتر `--grep` برای اجرای فقط همان تست می‌سازد
-3. دستور را اجرا می‌کند و خروجی را در پنل Output نمایش می‌دهد
+1. Extracts the test file path
+2. Builds the `ng test` command with `--include` filter to run only that test file
+3. Executes the command and displays output in the Output panel
 
-### مثال دستور تولید شده:
+### Example Generated Command:
 
-اگر تست `should create` در `MyComponent` باشد، دستور زیر اجرا می‌شود:
+For a test file `my-component.spec.ts`, the following command will be executed:
 ```bash
-node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test bdmp --configuration=withConfig --browsers=ChromeDebug --grep "MyComponent > should create"
+node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test bdmp --configuration=withConfig --browsers=ChromeDebug --include path/to/my-component.spec.ts
 ```
 
-## مثال
+## Example
 
 ```typescript
 describe('MyComponent', () => {
-  // ▶ Run: MyComponent  <-- کلیک کنید
+  // ▶ Run Test File  <-- Click here
   
   it('should create', () => {
-    // ▶ Run: should create  <-- کلیک کنید
+    // ...
   });
   
   describe('nested suite', () => {
-    // ▶ Run: nested suite  <-- کلیک کنید
-    
     it('should do something', () => {
-      // ▶ Run: should do something  <-- کلیک کنید
+      // ...
     });
   });
 });
 ```
 
-## توسعه
+## Development
 
 ```bash
-# کامپایل
+# Compile
 npm run compile
 
-# کامپایل با watch mode
+# Compile with watch mode
 npm run watch
 
-# بیلد برای انتشار
+# Build for publishing
 npm run vscode:prepublish
 ```
 
-## مجوز
+## License
 
 MIT
-

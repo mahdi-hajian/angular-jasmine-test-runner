@@ -14,9 +14,8 @@ export class TestRunner {
         try {
             this.outputChannel.clear();
             this.outputChannel.show(true);
-            this.outputChannel.appendLine(`Running test: ${testName}`);
+            this.outputChannel.appendLine(`Running test file: ${testName}`);
             this.outputChannel.appendLine(`File: ${filePath}`);
-            this.outputChannel.appendLine(`Line: ${lineNumber + 1}`);
             this.outputChannel.appendLine('');
 
             const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
@@ -33,13 +32,13 @@ export class TestRunner {
             // If library name is not set, ask user for it
             if (!libraryName || libraryName.trim() === '') {
                 const input = await vscode.window.showInputBox({
-                    prompt: 'نام کتابخانه را وارد کنید (Library Name)',
-                    placeHolder: 'مثال: bdmp',
+                    prompt: 'Enter library name (Library Name)',
+                    placeHolder: 'Example: bdmp',
                     ignoreFocusOut: true
                 });
 
                 if (!input || input.trim() === '') {
-                    vscode.window.showWarningMessage('اجرای تست لغو شد. نام کتابخانه الزامی است.');
+                    vscode.window.showWarningMessage('Test execution cancelled. Library name is required.');
                     return;
                 }
 
@@ -47,20 +46,20 @@ export class TestRunner {
                 
                 // Save to settings for future use
                 await config.update('libraryName', libraryName, vscode.ConfigurationTarget.Workspace);
-                vscode.window.showInformationMessage(`نام کتابخانه "${libraryName}" ذخیره شد.`);
+                vscode.window.showInformationMessage(`Library name "${libraryName}" saved.`);
             }
 
-            // Escape test name for grep pattern
-            const escapedTestName = this.escapeTestName(testName);
+            // Get relative file path for --include
+            const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
             
-            // Build ng test command with grep filter
-            const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, escapedTestName);
+            // Build ng test command with --include filter
+            const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
             
             this.outputChannel.appendLine(`Command: ${commandArgs.command} ${commandArgs.args.join(' ')}`);
             this.outputChannel.appendLine('');
 
             // Show progress
-            vscode.window.showInformationMessage(`Running test: ${testName}...`);
+            vscode.window.showInformationMessage(`Running test file: ${relativeFilePath}...`);
 
             // Execute ng test
             await this.executeCommand(
@@ -76,12 +75,7 @@ export class TestRunner {
         }
     }
 
-    private escapeTestName(testName: string): string {
-        // Escape special regex characters
-        return testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    private buildNgTestArgs(ngTestCommand: string, libraryName: string, ngTestArgs: string, testName: string): { command: string; args: string[] } {
+    private buildNgTestArgs(ngTestCommand: string, libraryName: string, ngTestArgs: string, filePath: string): { command: string; args: string[] } {
         // Parse the ng test command
         // Example: "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test"
         const parts = ngTestCommand.trim().split(/\s+/);
@@ -119,9 +113,9 @@ export class TestRunner {
             args.push(...additionalArgs);
         }
 
-        // Add --grep to filter the specific test
-        // This tells karma-jasmine to only run tests matching this pattern
-        args.push('--grep', testName);
+        // Add --include to filter the specific test file
+        // This tells Angular CLI to only run tests from this file
+        args.push('--include', filePath);
 
         return { command, args };
     }
