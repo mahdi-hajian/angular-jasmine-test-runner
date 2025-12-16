@@ -49,8 +49,12 @@ This will execute: `npm run test -- --include <filePath>`
 
 - `runSingleTest.usePackageJsonScript`: Set to `false` (default)
 - `runSingleTest.ngTestCommand`: Full command to run ng test (default: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
-- `runSingleTest.libraryName`: Library/project name for ng test (example: `bdmp`)
+- `runSingleTest.autoDetectLibraryName`: Automatically detect library name from the first folder in test file path (default: `false`)
+- `runSingleTest.libraryName`: Library/project name for ng test (example: `bdmp`). Used only if `autoDetectLibraryName` is `false`
 - `runSingleTest.ngTestArgs`: Additional arguments for ng test (default: `--configuration=withConfig --browsers=ChromeDebug`)
+
+**Auto-detect library name example:**
+If your test file is at `termeh-patterns/src/lib/search/trp-search.component.spec.ts`, enabling `autoDetectLibraryName` will automatically use `termeh-patterns` as the library name.
 
 Example:
 ```json

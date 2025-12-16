@@ -29,11 +29,17 @@ export class TestRunner {
             const usePackageJsonScript = config.get<boolean>('usePackageJsonScript', false);
             const packageJsonScript = config.get<string>('packageJsonScript', 'test');
             const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
-            const libraryName = config.get<string>('libraryName', '');
+            const autoDetectLibraryName = config.get<boolean>('autoDetectLibraryName', false);
+            let libraryName = config.get<string>('libraryName', '');
             const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
 
             // Get relative file path for --include
             const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
+            
+            // Auto-detect library name from file path if enabled
+            if (autoDetectLibraryName && !libraryName) {
+                libraryName = this.extractLibraryNameFromPath(relativeFilePath);
+            }
             
             let fullCommand: string;
 
@@ -60,6 +66,16 @@ export class TestRunner {
             vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
             this.outputChannel.appendLine(`ERROR: ${errorMessage}`);
         }
+    }
+
+    private extractLibraryNameFromPath(filePath: string): string {
+        // Extract the first folder from the path
+        // Example: "termeh-patterns/src/lib/search/trp-search.component.spec.ts" -> "termeh-patterns"
+        const pathParts = filePath.split(path.sep);
+        if (pathParts.length > 0 && pathParts[0]) {
+            return pathParts[0];
+        }
+        return '';
     }
 
     private buildPackageJsonScriptCommand(scriptName: string, filePath: string): string {

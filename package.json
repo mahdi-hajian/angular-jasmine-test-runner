@@ -64,10 +64,15 @@
           "default": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
           "description": "Full command to run ng test (used when usePackageJsonScript is false)"
         },
+        "runSingleTest.autoDetectLibraryName": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically detect library name from the first folder in the test file path (e.g., 'termeh-patterns' from 'termeh-patterns/src/lib/search/trp-search.component.spec.ts')"
+        },
         "runSingleTest.libraryName": {
           "type": "string",
           "default": "",
-          "description": "Library/project name for ng test (e.g., 'bdmp')"
+          "description": "Library/project name for ng test (e.g., 'bdmp'). Used only if autoDetectLibraryName is false"
         },
         "runSingleTest.ngTestArgs": {
           "type": "string",
