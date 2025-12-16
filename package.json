@@ -73,6 +73,11 @@
           "type": "string",
           "default": "--configuration=withConfig --browsers=ChromeDebug",
           "description": "Additional arguments for ng test (e.g., '--configuration=withConfig --browsers=ChromeDebug')"
+        },
+        "runSingleTest.maxLinesToCheck": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum number of lines to check for finding the first describe block (default: 100)"
         }
       }
     }

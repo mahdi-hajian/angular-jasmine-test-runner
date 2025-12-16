@@ -15,8 +15,9 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
         
-        // Optimized: Only check first 200 lines (describe is usually at the top)
-        const maxLinesToCheck = 50;
+        // Get max lines to check from configuration
+        const config = vscode.workspace.getConfiguration('runSingleTest');
+        const maxLinesToCheck = config.get<number>('maxLinesToCheck', 100);
         const lineCount = Math.min(document.lineCount, maxLinesToCheck);
         
         // Pre-compiled regex for better performance
