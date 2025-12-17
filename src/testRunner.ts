@@ -8,7 +8,7 @@ export class TestRunner {
     private currentTerminal: vscode.Terminal | null = null;
 
     constructor() {
-        this.outputChannel = vscode.window.createOutputChannel('Run Single Test');
+        this.outputChannel = vscode.window.createOutputChannel('Angular Jasmine Test Runner');
     }
 
     async runTestFromExplorer(resourceUri: vscode.Uri): Promise<void> {
@@ -203,7 +203,7 @@ export class TestRunner {
 
         // Create a new terminal
         this.currentTerminal = vscode.window.createTerminal({
-            name: 'Run Single Test',
+            name: 'Angular Jasmine Test Runner',
             cwd: cwd
         });
 

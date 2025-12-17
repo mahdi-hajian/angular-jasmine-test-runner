@@ -1,100 +1,49 @@
-# Run Single Test - VS Code Extension
+# Angular Jasmine Test Runner
 
-A VS Code extension for running individual Angular/Jasmine/Karma tests.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mahdi-hajian/vscode-run-single-test)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.74.0-blue.svg)](https://code.visualstudio.com/)
 
-## Features
+A VS Code extension for running individual Angular/Jasmine/Karma tests with a single click.
 
-- Display "▶ Run Test File" icon above the main `describe` block
-- Run specific test files with a single click
-- Support for `describe`, `fdescribe`
-- Display test output in the Output panel
+## ✨ Features
 
-## Installation
+- 🚀 **Quick Test Execution**: Run test files or folders with a single click
+- 📝 **CodeLens Integration**: Display "Run Test File" link above `describe` blocks
+- 📂 **File Explorer Support**: Run tests from the right-click context menu in File Explorer
+- ⚙️ **Flexible Configuration**: Support for npm scripts and direct `ng test` commands
+- 🔍 **Auto-detection**: Automatically detect library name from test file path
+- 📊 **Clear Output**: Display results in Output Panel and Terminal
 
-1. Clone or download this repository
-2. Run in terminal:
-   ```bash
-   npm install
-   npm run compile
-   ```
-3. In VS Code, press `F5` to open the extension in Extension Development Host window
+## 🚀 Installation
 
-## Usage
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X` or `Cmd+Shift+X`)
+3. Search for "Angular Jasmine Test Runner"
+4. Click Install
 
-1. Open an Angular/Jasmine test file
-2. A "▶ Run Test File" link will appear above the first `describe` block
+## 🎯 Usage
+
+### Running Tests from Editor
+
+1. Open a test file (`.spec.ts` or `.test.ts`) in VS Code
+2. You will see a **"▶ Run Test File"** link above the first `describe` block
 3. Click the link to run the test file
-4. Output will be displayed in the Output panel named "Run Single Test"
 
-## Configuration
+### Running Tests from File Explorer
 
-In VS Code settings you can change the following:
+1. Right-click on a test file (`.spec.ts` or `.test.ts`)
+2. Select **"Run Tests"** from the context menu
+3. You can also right-click on a folder to run all tests within that folder
 
-### Option 1: Use npm script from package.json
-
-- `runSingleTest.usePackageJsonScript`: Set to `true` to use npm script (default: `false`)
-- `runSingleTest.packageJsonScript`: Name of the script in package.json (default: `test`)
-
-Example:
-```json
-{
-  "runSingleTest.usePackageJsonScript": true,
-  "runSingleTest.packageJsonScript": "test"
-}
-```
-
-This will execute: `npm run test -- --include <filePath>`
-
-### Option 2: Use direct ng test command (default)
-
-- `runSingleTest.usePackageJsonScript`: Set to `false` (default)
-- `runSingleTest.ngTestCommand`: Full command to run ng test (default: `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test`)
-- `runSingleTest.autoDetectLibraryName`: Automatically detect library name from the first folder in test file path (default: `false`)
-- `runSingleTest.libraryName`: Library/project name for ng test (example: `bdmp`). Used only if `autoDetectLibraryName` is `false`
-- `runSingleTest.ngTestArgs`: Additional arguments for ng test (default: `--configuration=withConfig --browsers=ChromeDebug`)
-
-**Auto-detect library name example:**
-If your test file is at `termeh-patterns/src/lib/search/trp-search.component.spec.ts`, enabling `autoDetectLibraryName` will automatically use `termeh-patterns` as the library name.
-
-Example:
-```json
-{
-  "runSingleTest.usePackageJsonScript": false,
-  "runSingleTest.ngTestCommand": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
-  "runSingleTest.libraryName": "bdmp",
-  "runSingleTest.ngTestArgs": "--configuration=withConfig --browsers=ChromeDebug"
-}
-```
-
-### How to Configure:
-
-1. In VS Code, press `Ctrl+,` (or `Cmd+,` on Mac)
-2. Search for: `runSingleTest`
-3. Choose one of the options above and set the values accordingly
-
-## How It Works
-
-The extension uses CodeLens to display test run links above test blocks. When you click the link, the extension:
-
-1. Extracts the test file path
-2. Builds the `ng test` command with `--include` filter to run only that test file
-3. Executes the command and displays output in the Output panel
-
-### Example Generated Command:
-
-For a test file `my-component.spec.ts`, the following command will be executed:
-```bash
-node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test bdmp --configuration=withConfig --browsers=ChromeDebug --include path/to/my-component.spec.ts
-```
-
-## Example
+### Example
 
 ```typescript
 describe('MyComponent', () => {
   // ▶ Run Test File  <-- Click here
   
   it('should create', () => {
-    // ...
+    expect(component).toBeTruthy();
   });
   
   describe('nested suite', () => {
@@ -105,19 +54,86 @@ describe('MyComponent', () => {
 });
 ```
 
-## Development
+## ⚙️ Configuration
 
-```bash
-# Compile
-npm run compile
+You can configure the extension through VS Code Settings (`Ctrl+,` or `Cmd+,`). Search for `runSingleTest` to find all available settings.
 
-# Compile with watch mode
-npm run watch
+### Option 1: Using npm Scripts
 
-# Build for publishing
-npm run vscode:prepublish
+If you use npm scripts in your `package.json`:
+
+```json
+{
+  "runSingleTest.usePackageJsonScript": true,
+  "runSingleTest.packageJsonScript": "test"
+}
 ```
 
-## License
+This configuration will execute:
+```bash
+npm run test -- --include <filePath>
+```
 
-MIT
+**Settings:**
+- `runSingleTest.usePackageJsonScript`: Set to `true` to use npm script (default: `false`)
+- `runSingleTest.packageJsonScript`: Name of the script in package.json (default: `test`)
+
+### Option 2: Using Direct ng test Command (Default)
+
+```json
+{
+  "runSingleTest.usePackageJsonScript": false,
+  "runSingleTest.ngTestCommand": "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test",
+  "runSingleTest.libraryName": "my-library",
+  "runSingleTest.ngTestArgs": "--configuration=withConfig --browsers=ChromeDebug",
+  "runSingleTest.autoDetectLibraryName": false
+}
+```
+
+**Settings:**
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `runSingleTest.usePackageJsonScript` | boolean | `false` | Use npm script instead of direct command |
+| `runSingleTest.ngTestCommand` | string | `node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test` | Full command to run ng test |
+| `runSingleTest.libraryName` | string | `""` | Library/project name for ng test (e.g., `bdmp`) |
+| `runSingleTest.autoDetectLibraryName` | boolean | `false` | Automatically detect library name from file path |
+| `runSingleTest.ngTestArgs` | string | `--configuration=withConfig --browsers=ChromeDebug` | Additional arguments for ng test |
+
+### Auto-detect Library Name
+
+If you set `autoDetectLibraryName` to `true`, the library name will be automatically extracted from the first folder in the test file path:
+
+**Example:**
+- Test file: `termeh-patterns/src/lib/search/trp-search.component.spec.ts`
+- Library name: `termeh-patterns` (automatically detected)
+
+## 🔧 How It Works
+
+The extension uses CodeLens to display test run links above test blocks. When you click the link:
+
+1. The test file path is extracted
+2. The `ng test` command is built with `--include` filter to run only that test file
+3. The command is executed in Terminal and output is displayed in the Output Panel
+
+### Example Generated Command
+
+For a test file `my-component.spec.ts`, the following command will be executed:
+
+```bash
+node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test my-library --configuration=withConfig --browsers=ChromeDebug --include path/to/my-component.spec.ts
+```
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👤 Author
+
+**Mahdi Hajian**
+
+- GitHub: [@mahdi-hajian](https://github.com/mahdi-hajian)

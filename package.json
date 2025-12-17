@@ -1,6 +1,6 @@
 {
-  "name": "vscode-run-single-test",
-  "displayName": "Run Single Test",
+  "name": "angular-jasmine-test-runner",
+  "displayName": "Angular Jasmine Test Runner",
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
   "version": "1.0.0",
   "publisher": "mahdihajian",
@@ -68,7 +68,7 @@
       ]
     },
     "configuration": {
-      "title": "Run Single Test",
+      "title": "Angular Jasmine Test Runner",
       "properties": {
         "runSingleTest.usePackageJsonScript": {
           "type": "boolean",

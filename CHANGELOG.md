@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2024-XX-XX
+
+### Added
+- Initial release of Angular Jasmine Test Runner extension
+- CodeLens integration for running tests directly from editor
+- Support for running tests from File Explorer context menu
+- Support for running test directories
+- Configuration options for npm scripts and direct ng test commands
+- Auto-detection of library name from test file path
+- Output panel integration for test results
+- Terminal integration for executing test commands
+
+### Changed
+- Renamed extension from "Run Single Test" to "Angular Jasmine Test Runner" to better reflect its purpose
+- Updated package name from `vscode-run-single-test` to `angular-jasmine-test-runner`
+- Improved documentation and README
+
+### Features
+- Run individual test files with a single click
+- Support for Angular/Jasmine/Karma test frameworks
+- Flexible configuration system
+- Support for custom npm scripts
+- Support for custom ng test command and arguments
