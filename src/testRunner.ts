@@ -1,250 +1,111 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-import { spawn } from 'child_process';
+import { ConfigService, TestConfig } from './services/ConfigService';
+import { ConfigValidator } from './services/ConfigValidator';
+import { LibraryNameExtractor } from './services/LibraryNameExtractor';
+import { CommandBuilder } from './services/CommandBuilder';
+import { TerminalExecutor } from './services/TerminalExecutor';
+import { OutputChannelManager } from './services/OutputChannelManager';
+import { PathResolver } from './services/PathResolver';
 
 export class TestRunner {
-    private outputChannel: vscode.OutputChannel;
-    private currentTerminal: vscode.Terminal | null = null;
+    private outputChannelManager: OutputChannelManager;
+    private terminalExecutor: TerminalExecutor;
 
     constructor() {
-        this.outputChannel = vscode.window.createOutputChannel('Angular Jasmine Test Runner');
+        this.outputChannelManager = new OutputChannelManager('Angular Jasmine Test Runner');
+        this.terminalExecutor = new TerminalExecutor();
     }
 
-    async runTestFromExplorer(resourceUri: vscode.Uri): Promise<void> {
+    public async runTestFromExplorer(resourceUri: vscode.Uri): Promise<void> {
         try {
-            const stat = fs.statSync(resourceUri.fsPath);
-            const isDirectory = stat.isDirectory();
+            const isDirectory: boolean = PathResolver.isDirectory(resourceUri);
+            const workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.getWorkspaceFolder(resourceUri);
             
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(resourceUri);
             if (!workspaceFolder) {
                 vscode.window.showErrorMessage('No workspace folder found');
                 return;
             }
 
-            const config = vscode.workspace.getConfiguration('runSingleTest');
-            const usePackageJsonScript = config.get<boolean>('usePackageJsonScript', false);
-            const packageJsonScript = config.get<string>('packageJsonScript', 'test');
-            const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
-            const autoDetectLibraryName = config.get<boolean>('autoDetectLibraryName', false);
-            let libraryName = config.get<string>('libraryName', '');
-            const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
-
-            // Get relative path
-            const relativePath = path.relative(workspaceFolder.uri.fsPath, resourceUri.fsPath);
+            const config: TestConfig = ConfigService.getConfig();
+            const relativePath: string = PathResolver.getRelativePath(workspaceFolder, resourceUri);
             
-
-            // Validate: if autoDetectLibraryName is false and libraryName is empty, show error
-            if (!autoDetectLibraryName && !libraryName) {
-                vscode.window.showErrorMessage('Please configure either autoDetectLibraryName or libraryName.');
-                return;
-            }
-
-            // Auto-detect library name from path if enabled
-            if (autoDetectLibraryName && !libraryName) {
-                libraryName = this.extractLibraryNameFromPath(relativePath);
-            }
-
-            // Validate: if autoDetectLibraryName is true but extraction failed, show error
-            if (autoDetectLibraryName && !libraryName) {
-                vscode.window.showErrorMessage('Cannot extract library name from path. Please configure libraryName manually.');
-                return;
-            }
-
-            // Validate: if usePackageJsonScript is true but packageJsonScript is empty, show error
-            if (usePackageJsonScript && !packageJsonScript) {
-                vscode.window.showErrorMessage('Please configure the npm script to run in package.json.');
-                return;
-            }
-
-            // Build include pattern - if directory, add **/*.spec.ts pattern
-            let includePattern: string;
-            if (isDirectory) {
-                includePattern = `${relativePath}/**/*.spec.ts`;
-            } else {
-                includePattern = relativePath;
-            }
+            let libraryName: string = config.libraryName;
             
-            let fullCommand: string;
-
-            if (usePackageJsonScript) {
-                // Use npm script from package.json
-                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, includePattern);
-            } else {
-                // Use direct ng test command
-                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, includePattern);
-                fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
+            if (config.autoDetectLibraryName && !libraryName) {
+                libraryName = LibraryNameExtractor.extractFromPath(relativePath);
             }
 
-            this.outputChannel.clear();
-            this.outputChannel.show(true);
-            this.outputChannel.appendLine(`Running tests from: ${isDirectory ? 'folder' : 'file'}`);
-            this.outputChannel.appendLine(`Path: ${relativePath}`);
-            this.outputChannel.appendLine(`Command: ${fullCommand}`);
-            this.outputChannel.appendLine('');
+            if (!ConfigValidator.validateForDirectNgTest(config, libraryName)) {
+                return;
+            }
 
-            // Show progress
+            if (!ConfigValidator.validatePackageJsonScript(config)) {
+                return;
+            }
+
+            const includePattern: string = PathResolver.buildIncludePattern(relativePath, isDirectory);
+            const fullCommand: string = CommandBuilder.buildFullCommand(config, libraryName, includePattern);
+
+            this.outputChannelManager.clear();
+            this.outputChannelManager.show();
+            this.outputChannelManager.logTestExecution(isDirectory, relativePath, fullCommand);
+
             vscode.window.showInformationMessage(`Running tests from ${relativePath}...`);
 
-            // Execute command in terminal
-            await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);
+            await this.terminalExecutor.execute(fullCommand, workspaceFolder.uri.fsPath);
+            this.outputChannelManager.logCommandExecuted();
 
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
-            this.outputChannel.appendLine(`ERROR: ${errorMessage}`);
+            this.handleError(error);
         }
     }
 
-    async runTest(testName: string, filePath: string, lineNumber: number): Promise<void> {
+    public async runTest(testName: string, filePath: string, lineNumber: number): Promise<void> {
         try {
-            this.outputChannel.clear();
-            this.outputChannel.show(true);
-            this.outputChannel.appendLine(`Running test file: ${testName}`);
-            this.outputChannel.appendLine(`File: ${filePath}`);
-            this.outputChannel.appendLine('');
+            this.outputChannelManager.clear();
+            this.outputChannelManager.show();
+            this.outputChannelManager.appendLine(`Running test file: ${testName}`);
+            this.outputChannelManager.appendLine(`File: ${filePath}`);
+            this.outputChannelManager.appendLine('');
 
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
+            const workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
+            
             if (!workspaceFolder) {
                 vscode.window.showErrorMessage('No workspace folder found');
                 return;
             }
 
-            const config = vscode.workspace.getConfiguration('runSingleTest');
-            const usePackageJsonScript = config.get<boolean>('usePackageJsonScript', false);
-            const packageJsonScript = config.get<string>('packageJsonScript', 'test');
-            const ngTestCommand = config.get<string>('ngTestCommand', 'node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test');
-            const autoDetectLibraryName = config.get<boolean>('autoDetectLibraryName', false);
-            let libraryName = config.get<string>('libraryName', '');
-            const ngTestArgs = config.get<string>('ngTestArgs', '--configuration=withConfig --browsers=ChromeDebug');
-
-            // Get relative file path for --include
-            const relativeFilePath = path.relative(workspaceFolder.uri.fsPath, filePath);
+            const config: TestConfig = ConfigService.getConfig();
+            const relativeFilePath: string = PathResolver.getRelativeFilePath(workspaceFolder, filePath);
             
-            // Auto-detect library name from file path if enabled
-            if (autoDetectLibraryName && !libraryName) {
-                libraryName = this.extractLibraryNameFromPath(relativeFilePath);
+            let libraryName: string = config.libraryName;
+            
+            if (config.autoDetectLibraryName && !libraryName) {
+                libraryName = LibraryNameExtractor.extractFromPath(relativeFilePath);
             }
 
-            // Validate: if autoDetectLibraryName is false and libraryName is empty, show error
-            if (!usePackageJsonScript && !autoDetectLibraryName && !libraryName) {
-                vscode.window.showErrorMessage('Please configure either autoDetectLibraryName or libraryName.');
+            if (!ConfigValidator.validateForDirectNgTest(config, libraryName)) {
                 return;
             }
 
-            // Validate: if autoDetectLibraryName is true but extraction failed, show error
-            if (!usePackageJsonScript && autoDetectLibraryName && !libraryName) {
-                vscode.window.showErrorMessage('Cannot extract library name from path. Please configure libraryName manually.');
-                return;
-            }
+            const fullCommand: string = CommandBuilder.buildFullCommand(config, libraryName, relativeFilePath);
             
-            let fullCommand: string;
+            this.outputChannelManager.appendLine(`Command: ${fullCommand}`);
+            this.outputChannelManager.appendLine('');
 
-            if (usePackageJsonScript) {
-                // Use npm script from package.json
-                fullCommand = this.buildPackageJsonScriptCommand(packageJsonScript, relativeFilePath);
-            } else {
-                // Use direct ng test command
-                const commandArgs = this.buildNgTestArgs(ngTestCommand, libraryName, ngTestArgs, relativeFilePath);
-                fullCommand = `${commandArgs.command} ${commandArgs.args.join(' ')}`;
-            }
-            
-            this.outputChannel.appendLine(`Command: ${fullCommand}`);
-            this.outputChannel.appendLine('');
-
-            // Show progress
             vscode.window.showInformationMessage(`Running test file: ${relativeFilePath}...`);
 
-            // Execute command in terminal
-            await this.executeInTerminal(fullCommand, workspaceFolder.uri.fsPath);
+            await this.terminalExecutor.execute(fullCommand, workspaceFolder.uri.fsPath);
+            this.outputChannelManager.logCommandExecuted();
 
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
-            this.outputChannel.appendLine(`ERROR: ${errorMessage}`);
+            this.handleError(error);
         }
     }
 
-    private extractLibraryNameFromPath(filePath: string): string {
-        // Extract the first folder from the path
-        // Example: "termeh-patterns/src/lib/search/trp-search.component.spec.ts" -> "termeh-patterns"
-        const pathParts = filePath.split(path.sep);
-        if (pathParts.length > 0 && pathParts[0]) {
-            return pathParts[0];
-        }
-        return '';
-    }
-
-    private buildPackageJsonScriptCommand(scriptName: string, filePath: string): string {
-        // Build command: npm run <script> -- --include <filePath>
-        // The -- is needed to pass arguments to the underlying script
-        return `npm run ${scriptName} -- --include ${filePath}`;
-    }
-
-    private buildNgTestArgs(ngTestCommand: string, libraryName: string, ngTestArgs: string, filePath: string): { command: string; args: string[] } {
-        // Parse the ng test command
-        // Example: "node --max_old_space_size=15360 node_modules/@angular/cli/bin/ng test"
-        const parts = ngTestCommand.trim().split(/\s+/);
-        const command = parts[0]; // "node"
-        const commandParts = parts.slice(1); // ["--max_old_space_size=15360", "node_modules/@angular/cli/bin/ng", "test"]
-
-        // Find the index of "test" in the command parts
-        const testIndex = commandParts.indexOf('test');
-        
-        // Build arguments array
-        const args: string[] = [];
-
-        if (testIndex >= 0) {
-            // Add everything before "test" (node args + ng path)
-            args.push(...commandParts.slice(0, testIndex + 1)); // includes "test"
-            
-            // Add library name right after "test" if specified
-            if (libraryName) {
-                args.push(libraryName);
-            }
-        } else {
-            // "test" not found, add all parts and append "test"
-            args.push(...commandParts);
-            args.push('test');
-            
-            // Add library name if specified
-            if (libraryName) {
-                args.push(libraryName);
-            }
-        }
-
-        // Parse and add additional ng test arguments
-        if (ngTestArgs && ngTestArgs.trim()) {
-            const additionalArgs = ngTestArgs.trim().split(/\s+/).filter(arg => arg.length > 0);
-            args.push(...additionalArgs);
-        }
-
-        // Add --include to filter the specific test file
-        // This tells Angular CLI to only run tests from this file
-        args.push('--include', filePath);
-
-        return { command, args };
-    }
-
-    private async executeInTerminal(command: string, cwd: string): Promise<void> {
-        // Close existing terminal if any
-        if (this.currentTerminal) {
-            this.currentTerminal.dispose();
-        }
-
-        // Create a new terminal
-        this.currentTerminal = vscode.window.createTerminal({
-            name: 'Angular Jasmine Test Runner',
-            cwd: cwd
-        });
-
-        // Show terminal
-        this.currentTerminal.show();
-
-        // Execute command in terminal
-        this.currentTerminal.sendText(command, true);
-
-        this.outputChannel.appendLine(`Command executed in terminal. You can stop it with Ctrl+C in the terminal.`);
+    private handleError(error: unknown): void {
+        const errorMessage: string = error instanceof Error ? error.message : String(error);
+        vscode.window.showErrorMessage(`Error running test: ${errorMessage}`);
+        this.outputChannelManager.logError(errorMessage);
     }
 }
-

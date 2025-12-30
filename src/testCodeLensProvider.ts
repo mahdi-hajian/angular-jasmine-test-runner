@@ -6,49 +6,35 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 
     constructor(private testRunner: TestRunner) {
-        // Refresh code lenses when document changes
-        vscode.workspace.onDidChangeTextDocument(() => {
-            this._onDidChangeCodeLenses.fire();
-        });
+        this.setupDocumentChangeListener();
     }
 
-    provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
+    public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-        
-        // Get max lines to check from configuration
-        const config = vscode.workspace.getConfiguration('runSingleTest');
-        const maxLinesToCheck = config.get<number>('maxLinesToCheck', 100);
-        const lineCount = Math.min(document.lineCount, maxLinesToCheck);
-        
-        // Pre-compiled regex for better performance
-        const describeRegex = /^\s*(?:fdescribe|describe|xdescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
+        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('runSingleTest');
+        const maxLinesToCheck: number = config.get<number>('maxLinesToCheck', 100);
+        const lineCount: number = Math.min(document.lineCount, maxLinesToCheck);
+        const describeRegex: RegExp = /^\s*(?:fdescribe|describe|xdescribe)\s*\(['"`]([^'"`]+)['"`]\s*,/;
 
-        // Find only the first (main) describe block in the file
         for (let i = 0; i < lineCount; i++) {
-            const line = document.lineAt(i);
-            const lineText = line.text;
+            const line: vscode.TextLine = document.lineAt(i);
+            const lineText: string = line.text;
             
-            // Quick check: skip if line doesn't contain "describe"
             if (!lineText.includes('describe')) {
                 continue;
             }
             
-            const describeMatch = lineText.match(describeRegex);
+            const describeMatch: RegExpMatchArray | null = lineText.match(describeRegex);
             
             if (describeMatch) {
-                // Found the first describe block - add code lens only for this one
-                const testName = describeMatch[1];
-                const range = new vscode.Range(i, 0, i, lineText.length);
-                
-                // Add Run Test File code lens
-                const runCodeLens = new vscode.CodeLens(range, {
+                const testName: string = describeMatch[1];
+                const range: vscode.Range = new vscode.Range(i, 0, i, lineText.length);
+                const runCodeLens: vscode.CodeLens = new vscode.CodeLens(range, {
                     title: `▶ Run Test File`,
                     command: 'runSingleTest.runTest',
                     arguments: [testName, document.fileName, i]
                 });
                 codeLenses.push(runCodeLens);
-                
-                // Only show code lens for the first describe, so break after finding it
                 break;
             }
         }
@@ -56,5 +42,9 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
         return codeLenses;
     }
 
+    private setupDocumentChangeListener(): void {
+        vscode.workspace.onDidChangeTextDocument(() => {
+            this._onDidChangeCodeLenses.fire();
+        });
+    }
 }
-
