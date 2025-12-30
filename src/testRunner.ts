@@ -33,9 +33,28 @@ export class TestRunner {
             // Get relative path
             const relativePath = path.relative(workspaceFolder.uri.fsPath, resourceUri.fsPath);
             
+
+            // Validate: if autoDetectLibraryName is false and libraryName is empty, show error
+            if (!autoDetectLibraryName && !libraryName) {
+                vscode.window.showErrorMessage('Please configure either autoDetectLibraryName or libraryName.');
+                return;
+            }
+
             // Auto-detect library name from path if enabled
             if (autoDetectLibraryName && !libraryName) {
                 libraryName = this.extractLibraryNameFromPath(relativePath);
+            }
+
+            // Validate: if autoDetectLibraryName is true but extraction failed, show error
+            if (autoDetectLibraryName && !libraryName) {
+                vscode.window.showErrorMessage('Cannot extract library name from path. Please configure libraryName manually.');
+                return;
+            }
+
+            // Validate: if usePackageJsonScript is true but packageJsonScript is empty, show error
+            if (usePackageJsonScript && !packageJsonScript) {
+                vscode.window.showErrorMessage('Please configure the npm script to run in package.json.');
+                return;
             }
 
             // Build include pattern - if directory, add **/*.spec.ts pattern
@@ -105,6 +124,18 @@ export class TestRunner {
             // Auto-detect library name from file path if enabled
             if (autoDetectLibraryName && !libraryName) {
                 libraryName = this.extractLibraryNameFromPath(relativeFilePath);
+            }
+
+            // Validate: if autoDetectLibraryName is false and libraryName is empty, show error
+            if (!usePackageJsonScript && !autoDetectLibraryName && !libraryName) {
+                vscode.window.showErrorMessage('Please configure either autoDetectLibraryName or libraryName.');
+                return;
+            }
+
+            // Validate: if autoDetectLibraryName is true but extraction failed, show error
+            if (!usePackageJsonScript && autoDetectLibraryName && !libraryName) {
+                vscode.window.showErrorMessage('Cannot extract library name from path. Please configure libraryName manually.');
+                return;
             }
             
             let fullCommand: string;
