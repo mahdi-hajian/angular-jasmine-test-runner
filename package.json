@@ -4,6 +4,7 @@
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
   "version": "1.0.1",
   "publisher": "mahdihajian",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/mahdi-hajian/vscode-run-single-test.git"
