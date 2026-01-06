@@ -1,17 +1,8 @@
 import * as vscode from 'vscode';
 import { TestRunner } from './testRunner';
-import { TestCodeLensProvider } from './testCodeLensProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
     const testRunner: TestRunner = new TestRunner();
-    const codeLensProvider: TestCodeLensProvider = new TestCodeLensProvider(testRunner);
-
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider(
-            { pattern: '**/*.{spec,test}.{ts,js}' },
-            codeLensProvider
-        )
-    );
 
     const runTestFromExplorerCommand: vscode.Disposable = vscode.commands.registerCommand(
         'runSingleTest.runTestFromExplorer',
@@ -43,17 +34,9 @@ export function activate(context: vscode.ExtensionContext): void {
         }
     );
 
-    const runTestCommand: vscode.Disposable = vscode.commands.registerCommand(
-        'runSingleTest.runTest',
-        async (testName: string, filePath: string, lineNumber: number): Promise<void> => {
-            await testRunner.runTest(testName, filePath, lineNumber);
-        }
-    );
-
     context.subscriptions.push(
         runTestFromExplorerCommand,
-        runTestFromEditorCommand,
-        runTestCommand
+        runTestFromEditorCommand
     );
 }
 
