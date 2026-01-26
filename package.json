@@ -2,7 +2,7 @@
   "name": "angular-jasmine-test-runner",
   "displayName": "Angular Jasmine Test Runner",
   "description": "Run individual Angular/Jasmine/Karma tests with a click",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "mahdihajian",
   "icon": "icon.png",
   "repository": {
