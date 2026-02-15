@@ -7,12 +7,12 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mahdi-hajian/vscode-run-single-test.git"
+    "url": "https://github.com/mahdi-hajian/angular-jasmine-test-runner.git"
   },
   "bugs": {
-    "url": "https://github.com/mahdi-hajian/vscode-run-single-test/issues"
+    "url": "https://github.com/mahdi-hajian/angular-jasmine-test-runner/issues"
   },
-  "homepage": "https://github.com/mahdi-hajian/vscode-run-single-test#readme",
+  "homepage": "https://github.com/mahdi-hajian/angular-jasmine-test-runner#readme",
   "license": "MIT",
   "keywords": [
     "angular",
